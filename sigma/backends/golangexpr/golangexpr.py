@@ -56,7 +56,7 @@ class GolangExprBackend(TextQueryBackend):
     escape_char     : ClassVar[str] = "\\"    # Escaping character for special characrers inside string
     wildcard_multi  : ClassVar[str] = ".*"    # Character used as multi-character wildcard
     wildcard_single : ClassVar[str] = "."     # Character used as single-character wildcard
-    add_escaped     : ClassVar[str] = "\\"    # Characters quoted in addition to wildcards and string quote
+    add_escaped     : ClassVar[str] = "\"\\"    # Characters quoted in addition to wildcards and string quote
     filter_chars    : ClassVar[str] = ""      # Characters filtered
     bool_values     : ClassVar[Dict[bool, str]] = {   # Values to which boolean values are mapped.
         True: "true",
@@ -75,7 +75,7 @@ class GolangExprBackend(TextQueryBackend):
     # token stored in the class variable re_flags.
     re_expression : ClassVar[str] = "{field} matches \"{regex}\""
     re_escape_char : ClassVar[str] = "\\"               # Character used for escaping in regular expressions
-    re_escape : ClassVar[Tuple[str]] = ()               # List of strings that are escaped
+    re_escape : ClassVar[Tuple[str]] = ("\"")               # List of strings that are escaped
     re_escape_escape_char : bool = True                 # If True, the escape character is also escaped
     re_flag_prefix : bool = True                        # If True, the flags are prepended as (?x) group at the beginning of the regular expression, e.g. (?i). If this is not supported by the target, it should be set to False.
     # Mapping from SigmaRegularExpressionFlag values to static string templates that are used in

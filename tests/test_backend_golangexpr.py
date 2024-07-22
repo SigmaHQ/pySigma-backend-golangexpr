@@ -1,12 +1,42 @@
 import pytest
 from sigma.collection import SigmaCollection
 from sigma.backends.golangexpr import GolangExprBackend
+import os
+
 
 @pytest.fixture
 def golangexpr_backend():
     return GolangExprBackend()
 
-def test_golangexpr_and_expression(golangexpr_backend : GolangExprBackend):
+def test_convert_all_rules(golangexpr_backend : GolangExprBackend):
+    for root, dirs, files in os.walk("/vagrant/windows"):
+        for file in files:
+            if file.endswith(".yml"):
+                yamlStr = open(os.path.join(root, file), 'r').read()
+                conv = golangexpr_backend.convert(SigmaCollection.from_yaml(yamlStr))
+                print(conv[0])
+                with open(os.path.join(root, file)+".conv", "w") as file:
+                    file.write(conv[0])
+    assert False
+
+def test_golangexpr_and_expression1(golangexpr_backend : GolangExprBackend):
+    assert golangexpr_backend.convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test 
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                selection:
+                   ServiceFileName|contains|all:
+                        - '"set'
+                        - '-f'
+                condition: selection
+        """)
+    ) == [r'lower(ServiceFileName) contains lower("\"set") and lower(ServiceFileName) contains lower("-f")']
+
+def test_golangexpr_and_expression2(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test 
@@ -78,7 +108,7 @@ def test_golangexpr_or_and_expression(golangexpr_backend : GolangExprBackend):
         """)
     ) == ['lower(fieldA) == lower("valueA1") and lower(fieldB) == lower("valueB1") or lower(fieldA) == lower("valueA2") and lower(fieldB) == lower("valueB2")']
 
-def test_golangexpr_in_expression(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_in_expression1(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
@@ -96,7 +126,7 @@ def test_golangexpr_in_expression(golangexpr_backend : GolangExprBackend):
         """)
     ) == ['lower(fieldA) == lower("valueA") or lower(fieldA) == lower("valueB") or lower(fieldA) startsWith lower("valueC")']
 
-def test_golangexpr_regex_query(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_regex_query1(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
@@ -177,7 +207,7 @@ def test_golangexpr_win_path_backslash_2(golangexpr_backend : GolangExprBackend)
         """)
     ) == [r'(lower(Image) endsWith lower("\\certoc.exe") or lower(OriginalFileName) == lower("CertOC.exe")) and (lower(CommandLine) contains lower(" -LoadDLL ") or lower(CommandLine) contains lower(" /LoadDLL "))']
 
-def test_golangexpr_in_expression(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_in_expression2(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
@@ -197,7 +227,7 @@ def test_golangexpr_in_expression(golangexpr_backend : GolangExprBackend):
         """)
     ) == ['lower(fieldA) == lower("valueA") or lower(fieldA) == lower("valueB") or lower(fieldA) startsWith lower("valueC") or fieldA matches "val.*ue" or lower(fieldA) endsWith lower("value")']
 
-def test_golangexpr_regex_query(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_regex_query2(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
@@ -212,6 +242,66 @@ def test_golangexpr_regex_query(golangexpr_backend : GolangExprBackend):
                 condition: sel
         """)
     ) == ['fieldA matches "foo.*bar" and lower(fieldB) == lower("foo")']
+
+def test_golangexpr_regex_query3(golangexpr_backend : GolangExprBackend):
+    assert golangexpr_backend.convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|re: 'foo.*bar\w'
+                condition: sel
+        """)
+    ) == [r'fieldA matches "foo.*bar\\w"']
+
+def test_golangexpr_regex_query4(golangexpr_backend : GolangExprBackend):
+    assert golangexpr_backend.convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|re: 'foo.*bar\w\"\\'
+                condition: sel
+        """)
+    ) == [r'fieldA matches "foo.*bar\\w\\"\\\\"']
+
+def test_golangexpr_regex_query4(golangexpr_backend : GolangExprBackend):
+    assert golangexpr_backend.convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|re: 'foo.*bar\[[az]'
+                condition: sel
+        """)
+    ) == [r'fieldA matches "foo.*bar\\[[az]"']
+
+def test_golangexpr_regex_query5(golangexpr_backend : GolangExprBackend):
+    assert golangexpr_backend.convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test
+            status: test
+            logsource:
+                category: test_category
+                product: test_product
+            detection:
+                sel:
+                    fieldA|re: 'foo.*bar"'
+                condition: sel
+        """)
+    ) == [r'fieldA matches "foo.*bar\""']
 
 def test_golangexpr_regex_query_caseinsensitive(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
