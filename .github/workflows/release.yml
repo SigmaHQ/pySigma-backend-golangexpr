@@ -31,7 +31,9 @@ jobs:
         run: poetry build
       - name: Publish to test PyPI
         if: ${{ github.event_name == 'push' }}
-        run: poetry publish -r testpypi
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
       - name: Publish to PyPI
         if: ${{ github.event_name == 'release' }}
-        run: poetry publish
+        uses: pypa/gh-action-pypi-publish@release/v1
