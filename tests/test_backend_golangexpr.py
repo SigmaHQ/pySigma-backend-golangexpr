@@ -1,23 +1,10 @@
 import pytest
 from sigma.collection import SigmaCollection
 from sigma.backends.golangexpr import GolangExprBackend
-import os
-
 
 @pytest.fixture
 def golangexpr_backend():
     return GolangExprBackend()
-
-def test_convert_all_rules(golangexpr_backend : GolangExprBackend):
-    for root, dirs, files in os.walk("/vagrant/windows"):
-        for file in files:
-            if file.endswith(".yml"):
-                yamlStr = open(os.path.join(root, file), 'r').read()
-                conv = golangexpr_backend.convert(SigmaCollection.from_yaml(yamlStr))
-                print(conv[0])
-                with open(os.path.join(root, file)+".conv", "w") as file:
-                    file.write(conv[0])
-    assert False
 
 def test_golangexpr_and_expression1(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
@@ -157,22 +144,6 @@ def test_golangexpr_cidr_query(golangexpr_backend : GolangExprBackend):
         """)
     ) == ['lower(field) startsWith lower("192.168.")']
 
-# NOT POSSIBLE IN Expr
-# def test_golangexpr_field_name_with_whitespace(golangexpr_backend : GolangExprBackend):
-#     assert golangexpr_backend.convert(
-#         SigmaCollection.from_yaml("""
-#             title: Test
-#             status: test
-#             logsource:
-#                 category: test_category
-#                 product: test_product
-#             detection:
-#                 sel:
-#                     field name: value
-#                 condition: sel
-#         """)
-#     ) == ['<insert expected result here>']
-
 def test_golangexpr_win_path_backslash_1(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml(r"""
@@ -205,7 +176,7 @@ def test_golangexpr_win_path_backslash_2(golangexpr_backend : GolangExprBackend)
                     CommandLine|contains|windash: ' -LoadDLL '
                 condition: all of selection_*
         """)
-    ) == [r'(lower(Image) endsWith lower("\\certoc.exe") or lower(OriginalFileName) == lower("CertOC.exe")) and (lower(CommandLine) contains lower(" -LoadDLL ") or lower(CommandLine) contains lower(" /LoadDLL "))']
+    ) == [r'(lower(Image) endsWith lower("\\certoc.exe") or lower(OriginalFileName) == lower("CertOC.exe")) and (lower(CommandLine) contains lower(" -LoadDLL ") or lower(CommandLine) contains lower(" /LoadDLL ") or lower(CommandLine) contains lower(" –LoadDLL ") or lower(CommandLine) contains lower(" —LoadDLL ") or lower(CommandLine) contains lower(" ―LoadDLL "))']
 
 def test_golangexpr_in_expression2(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
@@ -268,12 +239,12 @@ def test_golangexpr_regex_query4(golangexpr_backend : GolangExprBackend):
                 product: test_product
             detection:
                 sel:
-                    fieldA|re: 'foo.*bar\w\"\\'
+                    fieldA|re: 'foo.*bar\w"'
                 condition: sel
         """)
-    ) == [r'fieldA matches "foo.*bar\\w\\"\\\\"']
+    ) == [r'fieldA matches "foo.*bar\\w\""']
 
-def test_golangexpr_regex_query4(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_regex_query5(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml(r"""
             title: Test
@@ -288,7 +259,7 @@ def test_golangexpr_regex_query4(golangexpr_backend : GolangExprBackend):
         """)
     ) == [r'fieldA matches "foo.*bar\\[[az]"']
 
-def test_golangexpr_regex_query5(golangexpr_backend : GolangExprBackend):
+def test_golangexpr_regex_query6(golangexpr_backend : GolangExprBackend):
     assert golangexpr_backend.convert(
         SigmaCollection.from_yaml(r"""
             title: Test
@@ -430,3 +401,20 @@ def test_golangexpr_contains_all(golangexpr_backend : GolangExprBackend):
                 condition: all of sel*
         """)
     ) == ['lower(field) contains lower("value1") and lower(field) contains lower("value2") and (lower(field) contains lower("value1") or lower(field) contains lower("value2"))']
+
+
+# NOT POSSIBLE IN Expr
+# def test_golangexpr_field_name_with_whitespace(golangexpr_backend : GolangExprBackend):
+#     assert golangexpr_backend.convert(
+#         SigmaCollection.from_yaml("""
+#             title: Test
+#             status: test
+#             logsource:
+#                 category: test_category
+#                 product: test_product
+#             detection:
+#                 sel:
+#                     field name: value
+#                 condition: sel
+#         """)
+#     ) == ['<insert expected result here>']

@@ -67,7 +67,7 @@ class GolangExprBackend(TextQueryBackend):
     startswith_expression : ClassVar[str] = "lower({field}) startsWith lower({value})"
     endswith_expression   : ClassVar[str] = "lower({field}) endsWith lower({value})"
     contains_expression   : ClassVar[str] = "lower({field}) contains lower({value})"
-    wildcard_match_expression : ClassVar[str] = "{field} matches {value}"      # Special expression if wildcards can't be matched with the eq_token operator
+    wildcard_match_expression : ClassVar[str] = "{field} matches \"{regex}\""      # Special expression if wildcards can't be matched with the eq_token operator
 
     # Regular expressions
     # Regular expression query as format string with placeholders {field}, {regex}, {flag_x} where x
