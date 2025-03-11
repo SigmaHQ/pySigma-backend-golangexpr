@@ -1,6 +1,8 @@
 import pytest
 from sigma.collection import SigmaCollection
 from sigma.backends.golangexpr import GolangExprBackend
+from sigma.pipelines.elasticsearch.windows import ecs_windows
+from sigma.processing.resolver import ProcessingPipelineResolver
 
 @pytest.fixture
 def golangexpr_backend():
@@ -402,6 +404,25 @@ def test_golangexpr_contains_all(golangexpr_backend : GolangExprBackend):
         """)
     ) == ['lower(field) contains lower("value1") and lower(field) contains lower("value2") and (lower(field) contains lower("value1") or lower(field) contains lower("value2"))']
 
+def test_golangexpr_FieldChain():
+    piperesolver = ProcessingPipelineResolver()
+    piperesolver.add_pipeline_class(ecs_windows())  
+    combined_pipeline = piperesolver.resolve(piperesolver.pipelines)
+    assert GolangExprBackend(combined_pipeline).convert(
+        SigmaCollection.from_yaml(r"""
+            title: Test 
+            status: test
+            logsource:
+                product: windows
+                service: security
+            detection:
+                selection:
+                   CommandLine|contains|all:
+                        - '"set'
+                        - '-f'
+                condition: selection
+        """)
+    ) == [r'lower(winlog?.channel) == lower("Security") and lower(process?.command_line) contains lower("\"set") and lower(process?.command_line) contains lower("-f")']
 
 # NOT POSSIBLE IN Expr
 # def test_golangexpr_field_name_with_whitespace(golangexpr_backend : GolangExprBackend):

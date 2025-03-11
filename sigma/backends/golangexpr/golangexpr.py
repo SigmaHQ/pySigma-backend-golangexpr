@@ -47,9 +47,12 @@ class GolangExprBackend(TextQueryBackend):
     field_quote_pattern_negation : ClassVar[bool] = True            # Negate field_quote_pattern result. Field name is quoted if pattern doesn't matches if set to True (default).
 
     ### Escaping
-    field_escape : None #ClassVar[str] = "\\"               # Character to escape particular parts defined in field_escape_pattern.
+    # CAUTION: the following could be considered as a slightly hacky solution
+    # but since expr does not allow any "special" chars in its field names 
+    # absuing the escaping to add `?` to any `.` (https://expr-lang.org/docs/language-definition#optional-chaining) seems reasonable
+    field_escape : ClassVar[str] = "?"               # Character to escape particular parts defined in field_escape_pattern.
     field_escape_quote : ClassVar[bool] = True        # Escape quote string defined in field_quote
-    field_escape_pattern : ClassVar[Pattern] = re.compile("\\s")   # All matches of this pattern are prepended with the string contained in field_escape.
+    field_escape_pattern : ClassVar[Pattern] = re.compile(r"\.")   # All matches of this pattern are prepended with the string contained in field_escape.
 
     ## Values
     str_quote       : ClassVar[str] = '"'     # string quoting character (added as escaping character)
